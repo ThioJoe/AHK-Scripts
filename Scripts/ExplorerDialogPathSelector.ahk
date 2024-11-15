@@ -579,8 +579,24 @@ PathSelector_Navigate(ThisMenuItemName, ThisMenuItemPos, MyMenu, f_path, windowC
     ; ------------------------- LOCAL FUNCTIONS -------------------------
     NavigateDialog(path, windowHwnd, dialogInfo) {
         if (dialogInfo.Type = "HasEditControl") {
+            ; Remove trailing backslash
+            if (SubStr(path, -1) = "\") {
+                path := SubStr(path, 1, -1)
+            }
+
             ; Send the path to the edit control text box using SendMessage
             DllCall("SendMessage", "Ptr", dialogInfo.ControlHwnd, "UInt", 0x000C, "Ptr", 0, "Str", path) ; 0xC is WM_SETTEXT - Sets the text of the text box
+
+            ; Set focus to the text box (this will make it active and ready for input)
+            DllCall("SendMessage", "Ptr", dialogInfo.ControlHwnd, "UInt", 0x0007, "Ptr", 0, "Ptr", 0) ; 0x7 is WM_SETFOCUS
+
+            ; Simulate pressing the Right Arrow key
+            DllCall("SendMessage", "Ptr", dialogInfo.ControlHwnd, "UInt", 0x0100, "UInt", 0x27, "Ptr", 0) ; WM_KEYDOWN with Right Arrow key (0x27)
+            DllCall("SendMessage", "Ptr", dialogInfo.ControlHwnd, "UInt", 0x0101, "UInt", 0x27, "Ptr", 0) ; WM_KEYUP with Right Arrow key (0x27)
+
+            ; Simulate pressing the Backslash key to focus the text box
+            DllCall("SendMessage", "Ptr", dialogInfo.ControlHwnd, "UInt", 0x0102, "UInt", 0x5C, "Ptr", 0) ; WM_CHAR with Backslash key (0x5C)
+
             ; Tell the dialog to accept the text box contents, which will cause it to navigate to the path
             DllCall("SendMessage", "Ptr", windowHwnd, "UInt", 0x0111, "Ptr", 0x1, "Ptr", 0) ; command ID (0x1) typically corresponds to the IDOK control which represents the primary action button, whether it's labeled "Save" or "Open".
 
