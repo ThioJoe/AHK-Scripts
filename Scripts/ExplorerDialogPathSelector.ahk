@@ -34,6 +34,7 @@ class pathSelector_DefaultSettings {
     ; Path to dopusrt.exe - can be empty to explicitly disable Directory Opus integration, but it will automatically disable if the file is not found anyway
     static dopusRTPath := "C:\Program Files\GPSoftware\Directory Opus\dopusrt.exe"
     static maxMenuLength := 120             ; Maximum length of menu items. The true max is MAX_PATH, but thats really long so this is a reasonable limit
+    static defaultPaths := "C:\;C:\Tmp\" ; semicolon seperated list of default paths
 }
 
 ; System Tray Menu Options
@@ -535,6 +536,24 @@ DisplayDialogPathMenu(thisHotkey) { ; Called via the Hotkey function, so it must
         }
     }
 
+    ; Add Default paths if any exist
+    if StrLen(g_pth_Settings.defaultPaths) > 0 {
+        ; Add separator if we had Directory Explorer paths
+        if (hasItems)
+            InsertMenuItem(CurrentLocations, "", unset, unset, unset, unset) ; Separator
+
+        InsertMenuItem(CurrentLocations, "Default", unset, unset, unset, unset) ; Header
+
+        defaultPathsList := StrSplit(g_pth_Settings.defaultPaths, ";")
+
+        for pathObj in defaultPathsList {
+            menuText := g_pth_Settings.standardEntryPrefix pathObj
+
+            InsertMenuItem(CurrentLocations, menuText, pathObj, A_WinDir . "\system32\imageres.dll", "111", false) ; Path
+            hasItems := true
+        }
+    }
+
     ; If there is a path in the clipboard, add it to the menu
     if DllCall("Shlwapi\PathIsDirectoryW", "Str", A_Clipboard) != 0 {
         ; Add separator if we had Directory Opus or Explorer paths
@@ -795,6 +814,12 @@ ShowPathSelectorSettingsGUI(*) {
     AddTooltipToControl(hTT, labelStandardEntryPrefix.Hwnd, labelStandardEntryPrefixTooltipText)
     AddTooltipToControl(hTT, standardPrefixEdit.Hwnd, labelStandardEntryPrefixTooltipText)
 
+    labelDefaultPaths := settingsGui.AddText("xm y+10 w120 h23 +0x200", "Default Paths:")
+    DefaultPathsEdit := settingsGui.AddEdit("x+10 yp w200", g_pth_Settings.defaultPaths)
+    labelDefaultPathsTooltipText := "Semicolon (;) seperated list of default Paths"
+    AddTooltipToControl(hTT, labelDefaultPaths.Hwnd, labelDefaultPathsTooltipText)
+    AddTooltipToControl(hTT, DefaultPathsEdit.Hwnd, labelDefaultPathsTooltipText)
+
     ; labelActiveTabSuffix := settingsGui.AddText("xm y+10 w120 h23 +0x200", "Active Tab Suffix:")
     ; suffixEdit := settingsGui.AddEdit("x+10 yp w200", g_settings.activeTabSuffix)
     ; labelActiveTabSuffixTooltipText := "Text/Characters will appear to the right of the active path for each window group, if you want as a label."
@@ -898,6 +923,7 @@ ShowPathSelectorSettingsGUI(*) {
         debugCheck.Value := pathSelector_DefaultSettings.enableExplorerDialogMenuDebug
         clipboardCheck.Value := pathSelector_DefaultSettings.alwaysShowClipboardmenuItem
         UIAccessCheck.Value := pathSelector_DefaultSettings.enableUIAccess
+        DefaultPathsEdit.Value := pathSelector_DefaultSettings.defaultPaths
     }
 
     SaveSettings(*) {
@@ -910,6 +936,7 @@ ShowPathSelectorSettingsGUI(*) {
         g_pth_Settings.enableExplorerDialogMenuDebug := debugCheck.Value
         g_pth_Settings.alwaysShowClipboardmenuItem := clipboardCheck.Value
         g_pth_Settings.enableUIAccess := UIAccessCheck.Value
+        g_pth_Settings.defaultPaths := DefaultPathsEdit.Value
 
         PathSelector_SaveSettingsToFile()
 
@@ -1177,6 +1204,7 @@ PathSelector_SaveSettingsToFile() {
         IniWrite(g_pth_Settings.alwaysShowClipboardmenuItem ? "1" : "0", settingsFilePath, "Settings", "alwaysShowClipboardmenuItem")
         IniWrite(g_pth_Settings.enableUIAccess ? "1" : "0", settingsFilePath, "Settings", "enableUIAccess")
         IniWrite(g_pth_Settings.maxMenuLength, settingsFilePath, "Settings", "maxMenuLength")
+        IniWrite(g_pth_Settings.defaultPaths, settingsFilePath, "Settings", "defaultPaths")
 
         g_pth_SettingsFile.usingSettingsFile := true
 
@@ -1220,6 +1248,7 @@ PathSelector_LoadSettingsFromSettingsFilePath(settingsFilePath) {
         g_pth_Settings.alwaysShowClipboardmenuItem := IniRead(settingsFilePath, "Settings", "alwaysShowClipboardmenuItem", pathSelector_DefaultSettings.alwaysShowClipboardmenuItem)
         g_pth_Settings.enableUIAccess := IniRead(settingsFilePath, "Settings", "enableUIAccess", pathSelector_DefaultSettings.enableUIAccess)
         g_pth_settings.maxMenuLength := IniRead(settingsFilePath, "Settings", "maxMenuLength", pathSelector_DefaultSettings.maxMenuLength)
+        g_pth_settings.defaultPaths := IniRead(settingsFilePath, "Settings", "defaultPaths", pathSelector_DefaultSettings.defaultPaths)
 
         ; Convert string boolean values to actual booleans
         g_pth_Settings.enableExplorerDialogMenuDebug := g_pth_Settings.enableExplorerDialogMenuDebug = "1"
