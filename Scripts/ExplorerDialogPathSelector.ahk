@@ -22,6 +22,8 @@ SetWorkingDir(A_ScriptDir)
 class pathSelector_DefaultSettings {
     ; Hotkey to show the menu. Default is Middle Mouse Button. If including this script in another script, you could choose to set this hotkey in the main script and comment this line out
     static dialogMenuHotkey := "~MButton"
+    ; Whether to show the tray icon
+    static showTrayIcon := true
     ; Enable debug mode to show tooltips with debug info
     static enableExplorerDialogMenuDebug := false
     ; Whether to show the disabled clipboard path menu item when no valid path is found on the clipboard, or only when a valid path is found on the clipboard
@@ -122,6 +124,9 @@ InitializePathSelectorSettings() {
             g_pth_Settings.%k% := pathSelector_DefaultSettings.%k%
         }
     }
+
+    ; Update tray icon
+    A_IconHidden := !g_pth_Settings.showTrayIcon
 
     ; ----- Special handling for certain settings -----
     ; For UI Access, always disable if not running standalone
@@ -801,7 +806,12 @@ ShowPathSelectorSettingsGUI(*) {
     ; AddTooltipToControl(hTT, labelActiveTabSuffix.Hwnd, labelActiveTabSuffixTooltipText)
     ; AddTooltipToControl(hTT, suffixEdit.Hwnd, labelActiveTabSuffixTooltipText)
 
-    debugCheck := settingsGui.AddCheckbox("xm y+15", "Enable Debug Mode")
+    trayIconCheck := settingsGui.AddCheckbox("xm y+15", "Show Tray Icon")
+    trayIconCheck.Value := g_pth_Settings.showTrayIcon
+    labelTrayIconCheckTooltipText := "If Disabled: The icon will be hidden from the tray"
+    AddTooltipToControl(hTT, trayIconCheck.Hwnd, labelTrayIconCheckTooltipText)
+
+    debugCheck := settingsGui.AddCheckbox("xm y+5", "Enable Debug Mode")
     debugCheck.Value := g_pth_Settings.enableExplorerDialogMenuDebug
     labelDebugCheckTooltipText := "Show tooltips with debug information when the hotkey is pressed.`nUseful for troubleshooting."
     AddTooltipToControl(hTT, debugCheck.Hwnd, labelDebugCheckTooltipText)
@@ -895,6 +905,7 @@ ShowPathSelectorSettingsGUI(*) {
         prefixEdit.Value := pathSelector_DefaultSettings.activeTabPrefix
         ;suffixEdit.Value := DefaultSettings.activeTabSuffix
         standardPrefixEdit.Value := pathSelector_DefaultSettings.standardEntryPrefix
+        trayIconCheck.Value := pathSelector_DefaultSettings.showTrayIcon
         debugCheck.Value := pathSelector_DefaultSettings.enableExplorerDialogMenuDebug
         clipboardCheck.Value := pathSelector_DefaultSettings.alwaysShowClipboardmenuItem
         UIAccessCheck.Value := pathSelector_DefaultSettings.enableUIAccess
@@ -907,6 +918,7 @@ ShowPathSelectorSettingsGUI(*) {
         g_pth_Settings.activeTabPrefix := prefixEdit.Value
         ;g_settings.activeTabSuffix := suffixEdit.Value
         g_pth_Settings.standardEntryPrefix := standardPrefixEdit.Value
+        g_pth_Settings.showTrayIcon := trayIconCheck.Value
         g_pth_Settings.enableExplorerDialogMenuDebug := debugCheck.Value
         g_pth_Settings.alwaysShowClipboardmenuItem := clipboardCheck.Value
         g_pth_Settings.enableUIAccess := UIAccessCheck.Value
@@ -928,6 +940,9 @@ ShowPathSelectorSettingsGUI(*) {
 
         ; Disable the original hotkey by passing in the previous hotkey string
         PathSelector_UpdateHotkey("", HotkeyInitialValue)
+
+        ; Update tray icon
+        A_IconHidden := !g_pth_Settings.showTrayIcon
 
         ; At this point all settings have been saved and applied
         RecordInitialValuesFromGlobalSettings()
@@ -1173,6 +1188,7 @@ PathSelector_SaveSettingsToFile() {
         IniWrite('"' g_pth_Settings.activeTabPrefix '"', settingsFilePath, "Settings", "activeTabPrefix")
         IniWrite('"' g_pth_Settings.activeTabSuffix '"', settingsFilePath, "Settings", "activeTabSuffix")
         IniWrite('"' g_pth_Settings.standardEntryPrefix '"', settingsFilePath, "Settings", "standardEntryPrefix")
+        IniWrite(g_pth_Settings.showTrayIcon ? "1" : "0", settingsFilePath, "Settings", "showTrayIcon")
         IniWrite(g_pth_Settings.enableExplorerDialogMenuDebug ? "1" : "0", settingsFilePath, "Settings", "enableExplorerDialogMenuDebug")
         IniWrite(g_pth_Settings.alwaysShowClipboardmenuItem ? "1" : "0", settingsFilePath, "Settings", "alwaysShowClipboardmenuItem")
         IniWrite(g_pth_Settings.enableUIAccess ? "1" : "0", settingsFilePath, "Settings", "enableUIAccess")
@@ -1216,12 +1232,14 @@ PathSelector_LoadSettingsFromSettingsFilePath(settingsFilePath) {
         g_pth_Settings.activeTabPrefix := IniRead(settingsFilePath, "Settings", "activeTabPrefix", pathSelector_DefaultSettings.activeTabPrefix)
         g_pth_Settings.activeTabSuffix := IniRead(settingsFilePath, "Settings", "activeTabSuffix", pathSelector_DefaultSettings.activeTabSuffix)
         g_pth_Settings.standardEntryPrefix := IniRead(settingsFilePath, "Settings", "standardEntryPrefix", pathSelector_DefaultSettings.standardEntryPrefix)
+        g_pth_Settings.showTrayIcon := IniRead(settingsFilePath, "Settings", "showTrayIcon", pathSelector_DefaultSettings.showTrayIcon)
         g_pth_Settings.enableExplorerDialogMenuDebug := IniRead(settingsFilePath, "Settings", "enableExplorerDialogMenuDebug", pathSelector_DefaultSettings.enableExplorerDialogMenuDebug)
         g_pth_Settings.alwaysShowClipboardmenuItem := IniRead(settingsFilePath, "Settings", "alwaysShowClipboardmenuItem", pathSelector_DefaultSettings.alwaysShowClipboardmenuItem)
         g_pth_Settings.enableUIAccess := IniRead(settingsFilePath, "Settings", "enableUIAccess", pathSelector_DefaultSettings.enableUIAccess)
         g_pth_settings.maxMenuLength := IniRead(settingsFilePath, "Settings", "maxMenuLength", pathSelector_DefaultSettings.maxMenuLength)
 
         ; Convert string boolean values to actual booleans
+        g_pth_Settings.showTrayIcon := g_pth_Settings.showTrayIcon = "1"
         g_pth_Settings.enableExplorerDialogMenuDebug := g_pth_Settings.enableExplorerDialogMenuDebug = "1"
         g_pth_Settings.alwaysShowClipboardmenuItem := g_pth_Settings.alwaysShowClipboardmenuItem = "1"
         g_pth_Settings.enableUIAccess := g_pth_Settings.enableUIAccess = "1"
