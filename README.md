@@ -6,3 +6,7 @@ Various AutoHotkey scripts I've made
 <p align="center">
 <img width="1000" alt="image" src="https://github.com/user-attachments/assets/78db2377-d4ce-49d3-a9af-ae7b174783b1">
 </p>
+
+### Video Showcase:
+
+[![The Most Useful App I've Made So Far 😤 (You'll Want To See This)](https://img.youtube.com/vi/tTo_MSUIHf8/sddefault.jpg)](https://www.youtube.com/watch?v=tTo_MSUIHf8 "Everything Is AWESOME")
